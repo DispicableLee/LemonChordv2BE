@@ -4,6 +4,7 @@ const cors = require("cors");
 const morgan = require("morgan");
 const helmet = require("helmet");
 const connectDB = require("./db");
+const endPoints = require("./Routes/APIs/endPoints")
 
 const app = express();
 
@@ -22,6 +23,9 @@ app.use(function (req, res, next) {
 app.use(morgan("dev"));
 
 app.use(helmet());
+
+app.use("/api/v2/endPoints", endPoints);
+//http://localhost:4002/api/v2/endPoints
 
 connectDB();
 
