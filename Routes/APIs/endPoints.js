@@ -6,6 +6,11 @@ const router = express.Router();
 const User = require("../../models/User");
 const Audio = require("../../models/Audio");
 
+
+
+
+// POST a new user
+//http://localhost:4002/api/v2/endPoints/new/user
 router.post("/new/user", async(req,res)=>{
     const user = await User.findOne({email:req.body.email})
     if(user){
@@ -17,6 +22,8 @@ router.post("/new/user", async(req,res)=>{
     }
 })
 
+// GET a user by email
+//http://localhost:4002/api/v2/endPoints/search/user/:email
 router.get("/search/user/:email", async(req,res)=>{
     console.log("searching...")
     const eMail = req.params.email;
@@ -27,7 +34,8 @@ router.get("/search/user/:email", async(req,res)=>{
         return res.status(400).send({})
     }
 })
-
+// POST a new song
+//http://localhost:4002/api/v2/endPoints/new/audio/:id
 router.post("/new/audio/:id", async(req,res)=>{
     const userID = req.params.id;
     const UserObjectId = ObjectID(userID);
@@ -66,6 +74,7 @@ router.get("/search/audio/:id", async(req,res)=>{
 })
 
 // GET: get all audio/songs in the Audio schema table
+//http://localhost:4002/api/v2/endPoints/search/all/songs
 router.get("/search/all/songs", async(req,res)=>{
     console.log("hitting all songs endpoint")
     const audios = await Audio.find();
