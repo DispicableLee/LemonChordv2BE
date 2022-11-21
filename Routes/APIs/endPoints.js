@@ -7,7 +7,7 @@ const User = require("../../models/User");
 const Audio = require("../../models/Audio");
 
 
-
+//============================================== USER ROUTES =====================================================
 
 // POST a new user
 //http://localhost:4002/api/v2/endPoints/new/user
@@ -34,6 +34,30 @@ router.get("/search/user/:email", async(req,res)=>{
         return res.status(400).send({})
     }
 })
+
+// GET all users 
+//http://localhost:4002/api/v2/endPoints/search/all/users
+router.get("/search/all/users", async (req,res)=>{
+    const users = await User.find();
+    return res.status(200).send(users)
+})
+
+// GET a user by their id
+//http://localhost:4002/api/v2/endPoints/search/users/:id
+router.get("/search/users/:id", async(req,res)=>{
+    const userId = req.params.id
+    const userObjectId = ObjectID(userId)
+    const user = await User.findById(userObjectId)
+    if(user){
+        return res.status(200).send(user)
+    }else{
+        console.log("failure")
+        return res.status(400).send({})
+    }
+})
+
+//==================================================== SONG/AUDIO ROUTES ==========================================================
+
 // POST a new song
 //http://localhost:4002/api/v2/endPoints/new/audio/:id
 router.post("/new/audio/:id", async(req,res)=>{
@@ -81,7 +105,9 @@ router.get("/search/all/songs", async(req,res)=>{
     return res.status(200).send(audios)
 })
 
+
 // DELETE: delete a song/audio from a user
+//http://localhost:4002/api/v2/endPoints/delete/:audioID/:userID
 router.delete("/delete/:audioID/:userID", async(req,res)=>{
     //find the user =============================================
     console.log("calling delete endpoint")
