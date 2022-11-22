@@ -85,6 +85,7 @@ router.post("/new/audio/:id", async(req,res)=>{
 })
 
 // GET: get a single audio/song by its id
+//http://localhost:4002/api/v2/endPoints/search/audio/:id
 router.get("/search/audio/:id", async(req,res)=>{
     console.log("looking for ur mom")
     const id = req.params.id;
@@ -96,6 +97,23 @@ router.get("/search/audio/:id", async(req,res)=>{
         return res.status(400).send({})
     }
 })
+
+//GET all songs from a specific user id
+//http://localhost:4002/api/v2/endPoints/search/all/usersongs/:userid
+//           NEEDS WORK
+router.get("http://localhost:4002/api/v2/endPoints/search/all/usersongs/:userid", async(req,res)=>{
+    const id = req.params.userid
+    const userObjectId = ObjectID(id)
+    const user = await User.findById(userObjectId)
+    if(user){
+        const userSongs = await Audio.find({userId: id})
+        return res.status(200).send(userSongs)
+
+    }else{
+        return res.status(400).send({})
+    }
+})
+
 
 // GET: get all audio/songs in the Audio schema table
 //http://localhost:4002/api/v2/endPoints/search/all/songs
