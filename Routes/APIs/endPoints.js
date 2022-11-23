@@ -101,7 +101,7 @@ router.get("/search/audio/:id", async(req,res)=>{
 //GET all songs from a specific user id
 //http://localhost:4002/api/v2/endPoints/search/all/usersongs/:userid
 //           NEEDS WORK
-router.get("http://localhost:4002/api/v2/endPoints/search/all/usersongs/:userid", async(req,res)=>{
+router.get("/search/all/usersongs/:userid", async(req,res)=>{
     const id = req.params.userid
     const userObjectId = ObjectID(id)
     const user = await User.findById(userObjectId)
