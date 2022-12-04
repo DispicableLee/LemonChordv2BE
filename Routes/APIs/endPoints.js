@@ -162,6 +162,7 @@ router.delete("/delete/:audioID/:userID", async(req,res)=>{
 })
 
 // PUT: like/un-like audio/song 
+//http://localhost:4002/api/v2/endPoints/like/:audioid/:userid
 router.put("/like/:audioid/:userid", async (req,res)=>{
     //see if the user is logged in first
     console.log("ur mom")
