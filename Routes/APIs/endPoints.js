@@ -5,6 +5,8 @@ const router = express.Router();
 
 const User = require("../../models/User");
 const Audio = require("../../models/Audio");
+const e = require("express");
+const Playlist = require("../../models/Playlist");
 
 
 //============================================== USER ROUTES =====================================================
@@ -120,6 +122,7 @@ router.get("/search/all/usersongs/:userid", async(req,res)=>{
 router.get("/search/all/songs", async(req,res)=>{
     console.log("hitting all songs endpoint")
     const audios = await Audio.find();
+    console.log(audios)
     return res.status(200).send(audios)
 })
 
@@ -207,6 +210,105 @@ router.put("/like/:audioid/:userid", async (req,res)=>{
                 await Audio.findOneAndUpdate(audioQuery, audioUpdatedValues);
                 return res.status(200).send(audioUpdatedValues)
             }
+        }else{
+            return res.status(400).send({})
+        }
+    }else{
+        return res.status(400).send({})
+    }
+})
+
+
+
+// ========================= playlist stuff ============================================
+
+// POST a new playlist
+//http://localhost:4002/api/v2/endPoints/new/playlist/:userid
+router.post("/new/playlist/:userid", async(req,res)=>{
+    const userId = req.params.userid
+    const userObjectId = ObjectID(userId)
+    const user = await User.findById(userObjectId)
+    if(user){
+        var uPlaylist = user.postedPlaylists
+        console.log(user.postedPlaylists)
+        const newPlaylist = new Playlist(req.body)
+        newPlaylist.save().catch(err=>console.log(err))
+        uPlaylist.unshift(newPlaylist._id)
+        var userQuery = {_id:user._id}
+        var userUpdatedValues = {
+                userName: user.userName, 
+                email: user.email,
+                fullName: user.fullName,
+                image: user.image,
+                postedSongs: user.postedSongs,
+                postedPlaylists: uPlaylist,
+        }
+        await User.findOneAndUpdate(userQuery, userUpdatedValues)
+        return res.status(200).send(userUpdatedValues)
+    }else{
+        return res.status(400).send({})
+    }
+})
+
+// GET all playlists
+//http://localhost:4002/api/v2/endPoints/search/all/playlists
+router.get("/search/all/playlists", async(req,res)=>{
+    const playlists = await Playlist.find()
+    return res.status(200).send(playlists)
+})
+
+// POST a song to a playlist
+//http://localhost:4002/api/v2/endPoints/add/song/:playlistid/:songid
+router.post("/add/song/:playlistid/:songid", async(req,res)=>{
+    const playlistId = req.params.playlistid
+    const playlistObjectID = ObjectID(playlistId)
+    const playlist = await Playlist.findById(playlistObjectID)
+    if(playlist){
+        const songid = req.params.songid
+        const songObjectId = ObjectID(songid)
+        const song = await Audio.findById(songObjectId)
+        if(song){
+            var playlistSongs = playlist.songs
+            playlistSongs.unshift(songid)
+            const playlistQuery = {_id:playlist._id}
+            const playlistUpdatedValues = {
+                name: playlist.name,
+                songs: playlistSongs,
+                likes: playlist.likes,
+                userId: playlist.userId,
+                image: playlist.image
+            }
+            await Playlist.findOneAndUpdate(playlistQuery, playlistUpdatedValues)
+            return res.status(200).send(playlistUpdatedValues)
+        }else{
+            return res.status(400).send({})
+        }
+    }else{
+        return res.status(400).send({})
+    }
+})
+
+// DELETE a song from a playlist
+//http://localhost:4002/api/v2/endPoints/remove/song/:playlistid/:songid
+router.delete("/remove/song/:playlistid/:songid", async(req,res)=>{
+    const playlistId = req.params.playlistid
+    const playlistObjectID = ObjectID(playlistId)
+    const playlist = await Playlist.findById(playlistObjectID)
+    if(playlist){
+        const songid = req.params.songid
+        const playlistSongs = playlist.songs
+        if(playlistSongs.includes(songid)){
+            var updatedPlaylist = playlistSongs.filter((id)=>!(id.equals(songid)))
+            const playlistQuery = {_id:playlist._id}
+            const playlistUpdatedValues = {
+                name: playlist.name,
+                songs: updatedPlaylist,
+                likes: playlist.likes,
+                userId: playlist.userId,
+                image: playlist.image
+            }
+            await Playlist.findOneAndUpdate(playlistQuery, playlistUpdatedValues)
+            return res.status(200).send(playlistUpdatedValues)
         }else{
             return res.status(400).send({})
         }
