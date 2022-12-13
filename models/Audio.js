@@ -10,6 +10,7 @@ const AudioSchema = new Schema({
     image: String,
     bucket: String,
     location: String,
+    comments: Array
     
 })
 

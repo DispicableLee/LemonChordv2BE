@@ -122,7 +122,6 @@ router.get("/search/all/usersongs/:userid", async(req,res)=>{
 router.get("/search/all/songs", async(req,res)=>{
     console.log("hitting all songs endpoint")
     const audios = await Audio.find();
-    console.log(audios)
     return res.status(200).send(audios)
 })
 
