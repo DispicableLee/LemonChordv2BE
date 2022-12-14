@@ -24,6 +24,22 @@ router.post("/new/user", async(req,res)=>{
     }
 })
 
+//GET a user by password and username
+//http://localhost:4002/api/v2/endPoints/search/user/:username/:password
+router.get("/search/user/:username/:password", async(req, res)=>{
+    const password = req.params.password
+    const user = await User.findOne({password:password})
+    if(user){
+        if(user.userName===req.params.username){
+            return res.status(200).send(user)
+        }else{
+            return res.status(400).send({})
+        }
+    }else{
+        return res.status(400).send({})
+    }
+})
+
 // GET a user by email
 //http://localhost:4002/api/v2/endPoints/search/user/:email
 router.get("/search/user/:email", async(req,res)=>{
@@ -57,6 +73,8 @@ router.get("/search/users/:id", async(req,res)=>{
         return res.status(400).send({})
     }
 })
+
+// GET a user by their username and password
 
 //==================================================== SONG/AUDIO ROUTES ==========================================================
 
