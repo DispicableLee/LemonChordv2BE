@@ -274,6 +274,21 @@ router.get("/search/all/playlists", async(req,res)=>{
     return res.status(200).send(playlists)
 })
 
+//GET all songs in a playlist
+//http://localhost:4002/api/v2/endPoints/search/all/songs/playlist/:playlistid
+router.get("/search/all/songs/playlist/:playlistid", async(req,res)=>{
+    const playlistid = req.params.playlistid
+    const playlistObjectID = ObjectID(playlistid)
+    const playlist = await Playlist.findById(playlistObjectID)
+    if(playlist){
+        const playlistSongs = playlist.songs
+        const fetchedSongs = await Audio.find({'_id':{$in:playlistSongs}})
+        return res.status(200).send(fetchedSongs)
+    }else{
+        return res.status(400).send({})
+    }
+})
+
 // POST a song to a playlist
 //http://localhost:4002/api/v2/endPoints/add/song/:playlistid/:songid
 router.post("/add/song/:playlistid/:songid", async(req,res)=>{
