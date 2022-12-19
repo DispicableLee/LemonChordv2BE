@@ -27,8 +27,7 @@ router.post("/new/user", async(req,res)=>{
 //GET a user by password and username
 //http://localhost:4002/api/v2/endPoints/search/user/:username/:password
 router.get("/search/user/:username/:password", async(req, res)=>{
-    const password = req.params.password
-    const user = await User.findOne({password:password})
+    const user = await User.findOne({password:req.params.password})
     if(user){
         if(user.userName===req.params.username){
             return res.status(200).send(user)
@@ -182,8 +181,8 @@ router.delete("/delete/:audioID/:userID", async(req,res)=>{
 })
 
 // PUT: like/un-like audio/song 
-//http://localhost:4002/api/v2/endPoints/like/:audioid/:userid
-router.put("/like/:audioid/:userid", async (req,res)=>{
+//http://localhost:4002/api/v2/endPoints/like/song/:audioid/:userid
+router.put("/like/song/:audioid/:userid", async (req,res)=>{
     //see if the user is logged in first
     console.log("ur mom")
     const userid = req.params.userid;
@@ -272,6 +271,19 @@ router.post("/new/playlist/:userid", async(req,res)=>{
 router.get("/search/all/playlists", async(req,res)=>{
     const playlists = await Playlist.find()
     return res.status(200).send(playlists)
+})
+// GET all playlists from one user
+//http://localhost:4002/api/v2/endPoints/search/all/playlists/:userid
+router.get("/search/all/playlists/:userid", async(req,res)=>{
+    const userID = req.params.userid
+    const userObjectId = ObjectID(userID)
+    const user = await User.findById(userObjectId)
+    if(user){
+        const userPlaylists = await Playlist.find({userId: req.params.userid})
+        return res.status(200).send(userPlaylists)
+    }else{
+        return res.status(400).send({})
+    }
 })
 
 //GET all songs in a playlist
