@@ -73,8 +73,6 @@ router.get("/search/users/:id", async(req,res)=>{
     }
 })
 
-// GET a user by their username and password
-
 //==================================================== SONG/AUDIO ROUTES ==========================================================
 
 // POST a new song
@@ -140,6 +138,21 @@ router.get("/search/all/songs", async(req,res)=>{
     console.log("hitting all songs endpoint")
     const audios = await Audio.find();
     return res.status(200).send(audios)
+})
+
+// GET all songs a user has liked
+//http://localhost:4002/api/v2/endPoints/search/all/liked/:userid
+router.get("/search/all/liked/:userid", async(req,res)=>{
+    const userID = req.params.userid
+    const userObjectId = ObjectID(userID)
+    const user = await User.findById(userObjectId)
+    if(user){
+        const audios = await Audio.find()
+        const likedSongs = audios.filter((song)=>(song.likes.includes(userID)))
+        return res.status(200).send(likedSongs)
+    }else{
+        return res.status(400).send({})
+    }
 })
 
 
@@ -301,6 +314,60 @@ router.get("/search/all/songs/playlist/:playlistid", async(req,res)=>{
     }
 })
 
+
+
+// PUT like/unlike a ploylist
+//http://localhost:4002/api/v2/endPoints/like/playlist/:playlistid/:userid
+router.put("/like/playlist/:playlistid/:userid", async(req,res)=>{
+    const userId = req.params.userid
+    const userObjectId = ObjectID(userId)
+    const user = await User.findById(userObjectId)
+    if(user){
+        const playlistId = req.params.playlistid
+        const playlistObjectID = ObjectID(playlistId)
+        const playlist = await Playlist.findById(playlistObjectID)
+        const playlistLikes = playlist.likes
+        if(playlist){
+            if(playlistLikes.includes(userId)){
+                //======= if the playlist likes array contains the user id
+                const unLiked = playlistLikes.filter((id)=>!(id.equals(userId)))
+                var playlistQuery = {_id:playlist._id}
+                var playlistUpdatedValues = {
+                    name: playlist.name,
+                    songs: playlist.songs,
+                    likes: unLiked,
+                    userId: playlist.userId,
+                    image: playlist.image
+                }
+                await Playlist.findOneAndUpdate(playlistQuery,playlistUpdatedValues)
+                return res.status(200).send(playlistUpdatedValues)
+            }else{
+                //=========== if the playlist likes array does not contain the user id
+                playlistLikes.unshift(userId)
+                var playlistQuery = {_id:playlist._id}
+                var playlistUpdatedValues = {
+                    name: playlist.name,
+                    songs: playlist.songs,
+                    likes: playlistLikes,
+                    userId: playlist.userId,
+                    image: playlist.image
+                }
+                await Playlist.findOneAndUpdate(playlistQuery,playlistUpdatedValues)
+                return res.status(200).send(playlistUpdatedValues)
+            }
+        }else{
+            return res.status(400).send({})
+        }
+    }else{
+        return res.status(400).send({})
+    }
+})
+
+
+
+
+
+
 // POST a song to a playlist
 //http://localhost:4002/api/v2/endPoints/add/song/:playlistid/:songid
 router.post("/add/song/:playlistid/:songid", async(req,res)=>{
@@ -360,6 +427,8 @@ router.delete("/remove/song/:playlistid/:songid", async(req,res)=>{
         return res.status(400).send({})
     }
 })
+
+
 
 
 
