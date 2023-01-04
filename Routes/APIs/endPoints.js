@@ -5,9 +5,10 @@ const router = express.Router();
 
 const User = require("../../models/User");
 const Audio = require("../../models/Audio");
-const e = require("express");
 const Playlist = require("../../models/Playlist");
+const Comment = require("../../models/Comment")
 
+const e = require("express");
 //============================================== USER ROUTES =====================================================
 
 // POST a new user
@@ -38,7 +39,7 @@ router.get("/search/user/:username/:password", async (req, res) => {
   }
 });
 
-// GET a user by email
+// GET a user by email ====================================
 //http://localhost:4002/api/v2/endPoints/search/user/:email
 router.get("/search/user/:email", async (req, res) => {
   console.log("searching...");
@@ -51,14 +52,14 @@ router.get("/search/user/:email", async (req, res) => {
   }
 });
 
-// GET all users
+// GET all users ========================================
 //http://localhost:4002/api/v2/endPoints/search/all/users
 router.get("/search/all/users", async (req, res) => {
   const users = await User.find();
   return res.status(200).send(users);
 });
 
-// GET a user by their id
+// GET a user by their id ===============================
 //http://localhost:4002/api/v2/endPoints/search/users/:id
 router.get("/search/users/:id", async (req, res) => {
   const userId = req.params.id;
@@ -71,6 +72,50 @@ router.get("/search/users/:id", async (req, res) => {
     return res.status(400).send({});
   }
 });
+
+// PUT edit a user's information ===========
+//http://localhost:4002/api/v2/endPoints/edit/:userid
+//         NEEDS WORK
+router.put("/edit/:userid", async(req,res)=>{
+    const userID = req.params.userid
+    const userObjectId = ObjectID(userID)
+    const user = await User.findById(userObjectId)
+    if(user){
+        var userQuery = {_id:user._id}
+        var userUpdatedValues = {
+            userName: req.body, 
+            password: req.body,
+            email: req.body,
+            fullName: req.body,
+            image: req.body,
+            postedSongs: user.postedSongs,
+            postedPlaylists: user.postedPlaylists,
+        }
+        await User.findOneAndUpdate(userQuery, userUpdatedValues)
+        return res.status(200).send(userUpdatedValues)
+    }else{
+        return res.status(400).send({})
+    }
+})
+
+// DELETE a user from the database ====================
+//http://localhost:4002/api/v2/endPoints/delete/:userID
+router.delete("/delete/:userID", async(req,res)=>{
+    const userID = req.params.userID
+    const userObjectId = ObjectID(userID)
+    const user = await User.findById(userObjectId)
+    if(user){
+        const deletedUser = await User.findOneAndDelete({_id: userObjectId})
+        return res.status(200).send(deletedUser)
+    }else{
+        return res.status({})
+    }
+})
+
+
+
+
+
 
 //==================================================== SONG/AUDIO ROUTES ==========================================================
 
@@ -116,7 +161,6 @@ router.get("/search/audio/:id", async (req, res) => {
 
 //GET all songs from a specific user id
 //http://localhost:4002/api/v2/endPoints/search/all/usersongs/:userid
-//           NEEDS WORK
 router.get("/search/all/usersongs/:userid", async (req, res) => {
   const id = req.params.userid;
   const userObjectId = ObjectID(id);
@@ -243,7 +287,15 @@ router.put("/like/song/:audioid/:userid", async (req, res) => {
   }
 });
 
-// ========================= playlist stuff ============================================
+//PUT update a song's information
+//
+
+
+
+
+
+
+// ================================================== playlist endpoints =========================================================
 
 // POST a new playlist
 //http://localhost:4002/api/v2/endPoints/new/playlist/:userid
@@ -279,6 +331,8 @@ router.get("/search/all/playlists", async (req, res) => {
   const playlists = await Playlist.find();
   return res.status(200).send(playlists);
 });
+
+
 // GET all playlists from one user
 //http://localhost:4002/api/v2/endPoints/search/all/playlists/:userid
 router.get("/search/all/playlists/:userid", async (req, res) => {
@@ -292,6 +346,25 @@ router.get("/search/all/playlists/:userid", async (req, res) => {
     return res.status(400).send({});
   }
 });
+
+//GET all playlists a user has liked
+//http://localhost:4002/api/v2/endPoints/search/all/liked/playlists/:userid
+router.get("/search/all/liked/playlists/:userid", async(req,res)=>{
+    const userID = req.params.userid
+    const userObjectId = ObjectID(userID)
+    const user = await User.findById(userObjectId)
+    if(user){
+        const allPlaylists = await Playlist.find()
+        const likedPlaylists = allPlaylists.filter((playlist)=>playlist.likes.includes(userID))
+        return res.status(400).send(likedPlaylists)
+    }else{
+        return res.status(400).send({})
+    }
+})
+
+
+
+
 
 //GET all songs in a playlist
 //http://localhost:4002/api/v2/endPoints/search/all/songs/playlist/:playlistid
@@ -308,7 +381,7 @@ router.get("/search/all/songs/playlist/:playlistid", async (req, res) => {
   }
 });
 
-// PUT like/unlike a ploylist
+// PUT like/unlike a playlist
 //http://localhost:4002/api/v2/endPoints/like/playlist/:playlistid/:userid
 router.put("/like/playlist/:playlistid/:userid", async (req, res) => {
   const userId = req.params.userid;
@@ -416,7 +489,7 @@ router.delete("/remove/song/:playlistid/:songid", async (req, res) => {
 });
 
 // DELETE a playlist
-//http://localhost:4002/api/v2/endPoints/delete/playlist:playlistId/:userID
+//http://localhost:4002/api/v2/endPoints/delete/playlist/:playlistId/:userID
 router.delete("/delete/playlist/:playlistId/:userID", async (req, res) => {
   const userID = req.params.userID;
   const userObjectId = ObjectID(userID);
@@ -451,5 +524,50 @@ router.delete("/delete/playlist/:playlistId/:userID", async (req, res) => {
     return res.status(400).send({});
   }
 });
+
+
+//================================== COMMENT ENDPOINTS ==============================================
+//===================================================================================================
+
+
+//POST a new comment to a song
+//http://localhost:4002/api/v2/endPoints/new/comment/:audioid
+router.post("/new/comment/:audioid", async(req,res)=>{
+    const audioid = req.params.audioid
+    const audioObjectId = ObjectID(audioid)
+    const audio = await Audio.findById(audioObjectId)
+    if(audio){
+        const newComment = new Comment(req.body)
+        var audioComments = audio.comments
+        audioComments.unshift(newComment._id)
+        var audioQuery = {_id:audio._id}
+        var audioUpdatedValues = {
+            name: audio.name,
+            key: audio.key,
+            likes: audio.likes,
+            userId: audio.userID,
+            image: audio.image,
+            bucket: audio.bucket,
+            location: audio.location,
+            comments: audioComments
+        }
+        await Audio.findOneAndUpdate(audioQuery, audioUpdatedValues)
+        newComment.save().catch((err) => console.log(err));
+        return res.status(200).send(newUser);
+    }else{
+        return res.status(audio)
+    }
+})
+
+
+
+
+
+
+
+
+
+
+
 
 module.exports = router;
