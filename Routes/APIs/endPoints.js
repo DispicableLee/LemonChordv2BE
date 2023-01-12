@@ -73,26 +73,16 @@ router.get("/search/users/:id", async (req, res) => {
   }
 });
 
-// PUT edit a user's information ===========
-//http://localhost:4002/api/v2/endPoints/edit/:userid
-//         NEEDS WORK
-router.put("/edit/:userid", async(req,res)=>{
+// PUT edit a user's information ====================
+//http://localhost:4002/api/v2/endPoints/edit/user/:userid
+router.put("/edit/user/:userid", async(req,res)=>{
     const userID = req.params.userid
     const userObjectId = ObjectID(userID)
     const user = await User.findById(userObjectId)
     if(user){
         var userQuery = {_id:user._id}
-        var userUpdatedValues = {
-            userName: req.body, 
-            password: req.body,
-            email: req.body,
-            fullName: req.body,
-            image: req.body,
-            postedSongs: user.postedSongs,
-            postedPlaylists: user.postedPlaylists,
-        }
-        await User.findOneAndUpdate(userQuery, userUpdatedValues)
-        return res.status(200).send(userUpdatedValues)
+        await User.findOneAndUpdate(userQuery, req.body)
+        return res.status(200).send(req.body)
     }else{
         return res.status(400).send({})
     }
@@ -288,10 +278,19 @@ router.put("/like/song/:audioid/:userid", async (req, res) => {
 });
 
 //PUT update a song's information
-//
-
-
-
+//http://localhost:4002/api/v2/endPoints/edit/song/:songid
+router.put("/edit/song/:songid", async(req,res)=>{
+    const audioID = req.params.songid
+    const audioObjectId = ObjectID(audioID)
+    const audio = await Audio.findById(audioObjectId)
+    if(audio){
+        const audioQuery = {_id:audio._id}
+        await Audio.findOneAndUpdate(audioQuery, req.body)
+        return res.status(200).send(req.body)
+    }else{
+        return res.status(400).send({})
+    }
+})
 
 
 
@@ -531,31 +530,140 @@ router.delete("/delete/playlist/:playlistId/:userID", async (req, res) => {
 
 
 //POST a new comment to a song
-//http://localhost:4002/api/v2/endPoints/new/comment/:audioid
-router.post("/new/comment/:audioid", async(req,res)=>{
-    const audioid = req.params.audioid
-    const audioObjectId = ObjectID(audioid)
-    const audio = await Audio.findById(audioObjectId)
-    if(audio){
-        const newComment = new Comment(req.body)
-        var audioComments = audio.comments
-        audioComments.unshift(newComment._id)
-        var audioQuery = {_id:audio._id}
-        var audioUpdatedValues = {
-            name: audio.name,
-            key: audio.key,
-            likes: audio.likes,
-            userId: audio.userID,
-            image: audio.image,
-            bucket: audio.bucket,
-            location: audio.location,
-            comments: audioComments
-        }
-        await Audio.findOneAndUpdate(audioQuery, audioUpdatedValues)
-        newComment.save().catch((err) => console.log(err));
-        return res.status(200).send(newUser);
+//http://localhost:4002/api/v2/endPoints/new/comment/:audioid/:userid
+router.post("/new/comment/:audioid/:userid", async(req,res)=>{
+    const userID = req.params.userid
+    const userObjectId = ObjectID(userID)
+    const user = await User.findById(userObjectId)
+    if(user){
+        const audioid = req.params.audioid
+        const audioObjectId = ObjectID(audioid)
+        const audio = await Audio.findById(audioObjectId)
+            if(audio){
+            const newComment = new Comment(req.body)
+                //adding to audio comments array
+            var audioComments = audio.comments
+            audioComments.unshift(newComment._id)
+            var audioQuery = {_id:audio._id}
+            var audioUpdatedValues = {
+                name: audio.name,
+                key: audio.key,
+                likes: audio.likes,
+                userId: audio.userId,
+                image: audio.image,
+                bucket: audio.bucket,
+                location: audio.location,
+                comments: audioComments
+            }
+            //adding to user comments array
+            const userCommentsArray = user.comments
+            userCommentsArray.unshift(newComment._id)
+            var userQuery = {_id:user._id}
+            var userUpdatedValues = {
+                userName: user.userName,
+                password: user.password,
+                email: user.email,
+                fullName: user.fullName,
+                image:user.image,
+                postedSongs: user.postedSongs,
+                postedPlaylists: user.postedPlaylists,
+                comments: userCommentsArray
+            }
+            await User.findOneAndUpdate(userQuery, userUpdatedValues)
+            await Audio.findOneAndUpdate(audioQuery, audioUpdatedValues)
+            newComment.save().catch((err) => console.log(err));
+            return res.status(200).send(newComment);
     }else{
         return res.status(audio)
+    }
+    }else{
+        return res.status(400).send({})
+    }
+})
+
+
+
+
+//GET all comments in database
+//http://localhost:4002/api/v2/endPoints/search/all/comments
+router.get("/search/all/comments", async(req,res)=>{
+        const allComments = await Comment.find()
+        return res.status(200).send(allComments)
+})
+
+
+//GET all comments from one user
+//http://localhost:4002/api/v2/endPoints/search/all/:userid/comments
+router.get("/search/all/:userid/comments", async (req,res)=>{
+    const userID = req.params.userid
+    const userObjectId = ObjectID(userID)
+    const user = await User.findById(userObjectId)
+    if(user){
+        const userComments = user.comments
+        return res.status(200).send(userComments)
+    }else{
+        return res.status(400).send({})
+    }
+})
+
+
+
+
+//GET all comments from one song
+//http://localhost:4002/api/v2/endPoints/search/all/song/:songid/comments
+router.get("/search/all/song/:songid/comments", async(req,res)=>{
+    const songid = req.params.songid
+    const songObjectId = ObjectID(songid)
+    const song = await Audio.findById(songObjectId)
+    if(song){
+        const fetchedComments = await Comment.find({audioId:song._id});
+        return res.status(200).send(fetchedComments)
+    }else{
+        return res.status(400).send({})
+    }
+})
+
+
+
+//DELETE a comment
+//http://localhost:4002/api/v2/endPoints/delete/comment/:commentId/:audioId/:userID
+router.delete("/delete/comment/:commentId/:userID", async(req,res)=>{
+    const userID = req.params.userID
+    const userObjectId = ObjectID(userID)
+    const user = await User.findById(userObjectId)
+    if(user){   
+        const audioId = req.params.audioId
+        const audioObjectId = ObjectID(audioId)
+        const audio = await Audio.findById(audioObjectId)
+        if(audio){
+            const commentId = req.params.commentId
+            const commentObjectId = ObjectID(commentId)
+            const comment = await Comment.findById(commentObjectId)
+            if(comment){
+                const deletedComment = await Comment.findOneAndDelete({_id:commentObjectId})
+                const audioComments = audio.comments
+                const newCommentsList = audioComments.filter((id)=>!(id.equals(deletedComment._id)))
+                var audioQuery = {_id:audio._id}
+                var audioUpdatedValues = {
+                    name: audio.name,
+                    key: audio.key,
+                    likes: audio.likes,
+                    userId: audio.userId,
+                    image: audio.image,
+                    bucket: audio.bucket,
+                    location: audio.location,
+                    comments: newCommentsList    
+                }
+                await Audio.findOneAndUpdate(audioQuery, audioUpdatedValues)
+                return res.status(200).send(audioUpdatedValues)
+            }else{
+                return res.status(400).send({})
+        }
+        }else{
+            return res.status(400).send({})
+        }
+    }else{
+        return res.status(400).send({})
     }
 })
 

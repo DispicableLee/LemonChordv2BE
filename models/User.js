@@ -14,6 +14,7 @@ const UserSchema = new Schema({
     image: String,
     postedSongs: Array,
     postedPlaylists: Array,
+    comments: Array
 })
 
 module.exports = mongoose.model("User", UserSchema);
